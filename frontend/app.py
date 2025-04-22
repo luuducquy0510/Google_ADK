@@ -3,12 +3,12 @@ import requests
 import json
 
 # URL to your FastAPI backend
-BACKEND_URL= "http://localhost:8000"
+BACKEND_URL= "http://localhost:8080"
 
 
 # Chatbot section
-st.set_page_config(page_title="Web Search Assistant", page_icon="🧠")
-st.title("Web Search Assistant")
+st.set_page_config(page_title="Personal Assistant Assistant", page_icon="🧠")
+st.title("Personal Assistant Assistant")
 
                     
 
@@ -46,7 +46,7 @@ if prompt := st.chat_input("Ask your research question..."):
 
             for chunk in res.iter_content(chunk_size=1):
                 if chunk:
-                    streamed_reply += chunk.decode("utf-8")
+                    streamed_reply += chunk.decode("utf-8", errors="ignore")
         response_obj = json.loads(streamed_reply)
         response_text = response_obj["response"]
 
