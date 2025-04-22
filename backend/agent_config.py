@@ -4,7 +4,7 @@ import logging
 from google.adk.agents import Agent
 from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
-from agent_tool import web_search_tool
+from agent_tool import web_search_tool, rag_tool
 from google.genai import types # For creating message Content/Parts
 from model import AgentResponse
 import prompt as prompt
@@ -28,7 +28,7 @@ if not API_KEY:
 
 
 # Configuration for the agent
-weather_agent = Agent(
+web_search_agent = Agent(
     name="web_search_agent",
     model=AGENT_MODEL, # Can be a string for Gemini or a LiteLlm object
     description="A helpful assistant that can search the web for information.",
@@ -36,29 +36,44 @@ weather_agent = Agent(
     tools=[web_search_tool], # Pass the function directly
 )
 
-logger.debug(f"Agent '{weather_agent.name}' created using model '{AGENT_MODEL}'.")
+logger.debug(f"Agent '{web_search_agent.name}' created using model '{AGENT_MODEL}'.")
 
+deep_research_agent = Agent(
+    name="deep_research_agent",
+    model=AGENT_MODEL, # Can be a string for Gemini or a LiteLlm object
+    description="A helpful assistant that can search the web for information.",
+    instruction=prompt.deep_research_agent_prompt, # The prompt for the agent
+    tools=[web_search_tool], # Pass the function directly
+)
 
+internal_search_agent = Agent(
+    name="internal_search_agent",
+    model=AGENT_MODEL, # Can be a string for Gemini or a LiteLlm object
+    description="A helpful assistant that can search the web for information.",
+    instruction=prompt.internal_search_agent_prompt, # The prompt for the agent
+    tools=[rag_tool], # Pass the function directly
+)
 session_service = InMemorySessionService()
 
-session = session_service.create_session(
-    app_name="web_search_app",
-    user_id="user_123",
-    session_id="session_123"
-)
 
-runner = Runner(
-    agent=weather_agent, # The agent we want to run
-    app_name="web_search_app",   # Associates runs with our app
-    session_service=session_service # Uses our session manager
-)
-
-
-async def call_agent_async(query: str):
+async def call_agent_async(agent_name, query: str):
     """Sends a query to the agent and prints the final response."""
-    print(f"\n>>> User Query: {query}")
     # Prepare the user's message in ADK format
     content = types.Content(role='user', parts=[types.Part(text=query)])
+
+    global session_service
+
+    session = session_service.create_session(
+    app_name="Multi Agent App",
+    user_id="user_123",
+    session_id="session_123"
+    )
+
+    runner = Runner(
+    agent=agent_name, # The agent we want to run
+    app_name="Multi Agent App",   # Associates runs with our app
+    session_service=session_service # Uses our session manager
+    )
 
     final_response_text = "Agent did not produce a final response." # Default
     # Print the response from the agent
